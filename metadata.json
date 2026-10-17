@@ -1,0 +1,6 @@
+{
+  "name": "QuickCart – AI Supermarket Order Bot",
+  "description": "Multimodal AI supermarket order bot that turns handwritten grocery lists, receipts, and Pidgin/English messy texts into confirmed shopping carts instantly.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
