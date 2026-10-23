@@ -17,7 +17,7 @@ export type OrderStatus = CompletedOrder['status'];
 interface OrderTimelineProps {
   status: OrderStatus;
   orderType: 'delivery' | 'pickup';
-  onStatusChange: (newStatus: OrderStatus) => void;
+  onStatusChange?: (newStatus: OrderStatus) => void;
   compact?: boolean;
 }
 
@@ -158,8 +158,8 @@ export const OrderTimeline: React.FC<OrderTimelineProps> = ({
           <OrderStatusPill status={status} orderType={orderType} size="md" />
         </div>
 
-        {/* Quick Advance Button */}
-        {nextStep && (
+        {/* Quick Advance Button (Only in admin/edit mode) */}
+        {onStatusChange && nextStep && (
           <button
             type="button"
             onClick={() => onStatusChange(nextStep.key)}
@@ -194,9 +194,11 @@ export const OrderTimeline: React.FC<OrderTimelineProps> = ({
             return (
               <div
                 key={step.key}
-                onClick={() => onStatusChange(step.key)}
-                className="flex flex-col items-center text-center group cursor-pointer"
-                title={`Click to set status to ${step.label}`}
+                onClick={() => onStatusChange && onStatusChange(step.key)}
+                className={`flex flex-col items-center text-center group ${
+                  onStatusChange ? 'cursor-pointer' : 'cursor-default'
+                }`}
+                title={onStatusChange ? `Click to set status to ${step.label}` : step.label}
               >
                 {/* Circle Indicator */}
                 <div

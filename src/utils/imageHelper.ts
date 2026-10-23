@@ -60,9 +60,9 @@ export const SAMPLE_PHOTOS: SamplePhoto[] = [
         <!-- Receipt Paper Body with jagged top/bottom -->
         <path d="M 40 20 L 70 30 L 100 20 L 130 30 L 160 20 L 190 30 L 220 20 L 250 30 L 280 20 L 310 30 L 340 20 L 370 30 L 400 20 L 430 30 L 460 20 L 490 30 L 510 20 L 510 710 L 480 700 L 450 710 L 420 700 L 390 710 L 360 700 L 330 710 L 300 700 L 270 710 L 240 700 L 210 710 L 180 700 L 150 710 L 120 700 L 90 710 L 60 700 L 40 710 Z" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" />
         <g fill="#1e293b" font-family="'Courier New', Courier, monospace">
-          <text x="275" y="80" text-anchor="middle" font-weight="bold" font-size="22">QUICKCART SUPERMARKET</text>
+          <text x="275" y="80" text-anchor="middle" font-weight="bold" font-size="22">QUICKCART</text>
           <text x="275" y="105" text-anchor="middle" font-size="13">Moniya Central, Ibadan, Oyo State</text>
-          <text x="275" y="125" text-anchor="middle" font-size="12">Tel: +234 802 345 6789</text>
+          <text x="275" y="125" text-anchor="middle" font-size="12">Tel: +2348155379789</text>
           <text x="275" y="150" text-anchor="middle" font-size="13">----------------------------------------</text>
           <text x="70" y="180" font-size="14" font-weight="bold">QTY  ITEM DESCRIPTION               PRICE</text>
           <text x="275" y="195" text-anchor="middle" font-size="13">----------------------------------------</text>
@@ -79,7 +79,7 @@ export const SAMPLE_PHOTOS: SamplePhoto[] = [
           <text x="70" y="495" font-size="18" font-weight="bold">TOTAL PAID:                NGN 10,800</text>
           <text x="275" y="530" text-anchor="middle" font-size="13">----------------------------------------</text>
           <text x="275" y="570" text-anchor="middle" font-size="12">THANK YOU FOR YOUR PATRONAGE!</text>
-          <text x="275" y="590" text-anchor="middle" font-size="12">KEEP THIS RECEIPT FOR RE-ORDER</text>
+          <text x="275" y="590" text-anchor="middle" font-size="12">KEEP THIS RECEIPT FOR REORDER</text>
         </g>
       </svg>
     `)}`,

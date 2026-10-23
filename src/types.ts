@@ -1,3 +1,5 @@
+export type PaymentMethodType = 'pay_on_delivery' | 'bank_transfer' | 'card_pos';
+
 export interface CatalogItem {
   id: string;
   name: string;
@@ -7,6 +9,11 @@ export interface CatalogItem {
   aliases: string[];
   imagePlaceholderColor?: string;
   popular?: boolean;
+  stockCount?: number;
+  marketEquivalents?: string;
+  tag?: string;
+  sellerName?: string;
+  sellerLocation?: string;
 }
 
 export interface ParsedItemResult {
@@ -96,4 +103,7 @@ export interface CompletedOrder {
   location: OrderLocation;
   status: 'Received' | 'Packing' | 'Ready for Pickup' | 'Delivered';
   notes?: string;
+  paymentMethod?: PaymentMethodType;
+  deliveryInstructions?: string;
 }
+

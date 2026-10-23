@@ -29,16 +29,29 @@ import {
   Check,
   Filter,
   Bell,
-  BellRing
+  BellRing,
+  HelpCircle,
+  Scale,
+  CreditCard,
+  ShieldCheck,
+  Info,
+  History,
+  RotateCcw
 } from 'lucide-react';
 import { CATALOG, formatNaira } from './catalogData.ts';
 import { SAMPLE_PHOTOS, convertToRasterBase64, SamplePhoto } from './utils/imageHelper.ts';
 import { STORE_BRANCHES, DELIVERY_ZONES, reverseGeocodeCoordinates } from './locationData.ts';
-import { CatalogItem, CompletedOrder, ParseApiResponse, OrderLocation } from './types.ts';
+import { CatalogItem, CompletedOrder, ParseApiResponse, OrderLocation, PaymentMethodType } from './types.ts';
 import { OrderTimeline, OrderStatusPill, OrderStatus } from './components/OrderTimeline.tsx';
 import { NotificationToast, AppNotification, playNotificationChime } from './components/NotificationToast.tsx';
+import { StoreInfoModal } from './components/StoreInfoModal.tsx';
+import { UnitGuideModal } from './components/UnitGuideModal.tsx';
+import { CustomerOrderTrackerModal } from './components/CustomerOrderTrackerModal.tsx';
+import { DeliveryZonesModal } from './components/DeliveryZonesModal.tsx';
+import { FaqSection } from './components/FaqSection.tsx';
+import { MyOrdersModal } from './components/MyOrdersModal.tsx';
 
-const STORAGE_ORDERS_KEY = 'quickcart_orders_v4';
+const STORAGE_ORDERS_KEY = 'quickcart_orders_v5';
 const STORAGE_CART_KEY = 'quickcart_active_cart_v4';
 const STORAGE_NOTIFICATIONS_KEY = 'quickcart_notifications_v1';
 
@@ -68,10 +81,39 @@ const INITIAL_SEED_ORDERS: CompletedOrder[] = [
       address: 'Plot 18, Moniya Train Station Road, Moniya, Ibadan',
       landmark: 'Opposite Railway Quarters, Moniya',
       deliveryFee: 400,
-      estimatedTime: '10 – 20 mins'
+      estimatedTime: '10 to 20 mins'
     },
     status: 'Received',
     notes: 'Urgent order before lunch rush'
+  },
+  {
+    id: 'ORD-098',
+    orderNumber: 98,
+    createdAt: 'Yesterday, 04:30 PM',
+    customerName: 'Amina Bello',
+    customerPhone: '0802 345 6789',
+    sourceType: 'manual',
+    transcription: 'Weekly grocery restock: indomie carton, peak milk, rice, brown beans',
+    items: [
+      { catalogId: 'indomie_carton', name: 'Indomie Instant Noodles (Carton - 40pcs)', quantity: 1, price: 9500, total: 9500 },
+      { catalogId: 'rice_5kg', name: 'Rice (5kg Bag)', quantity: 1, price: 8500, total: 8500 },
+      { catalogId: 'peak_milk_tin', name: 'Peak Evaporated Milk (Tin 160g)', quantity: 4, price: 1500, total: 6000 },
+      { catalogId: 'beans_1kg', name: 'Brown Beans (1kg)', quantity: 2, price: 2200, total: 4400 }
+    ],
+    subtotal: 28400,
+    deliveryFee: 400,
+    total: 28800,
+    location: {
+      type: 'delivery',
+      zoneId: 'zone_moniya',
+      area: 'Moniya Central, Train Station & Akinyele',
+      address: 'Plot 18, Moniya Train Station Road, Moniya, Ibadan',
+      landmark: 'Opposite Railway Quarters, Moniya',
+      deliveryFee: 400,
+      estimatedTime: 'Delivered'
+    },
+    status: 'Delivered',
+    notes: 'Delivered successfully to Moniya residence'
   },
   {
     id: 'ORD-103',
@@ -96,7 +138,7 @@ const INITIAL_SEED_ORDERS: CompletedOrder[] = [
       address: 'Old Barracks Road, Near Ojoo Interchange, Ibadan',
       landmark: 'Behind Ojoo Central Market',
       deliveryFee: 500,
-      estimatedTime: '15 – 25 mins'
+      estimatedTime: '15 to 25 mins'
     },
     status: 'Packing',
     notes: 'Packing bags from shelves'
@@ -120,7 +162,7 @@ const INITIAL_SEED_ORDERS: CompletedOrder[] = [
     location: {
       type: 'pickup',
       branchId: 'branch_moniya',
-      branchName: 'QuickCart Supermarket — Moniya Flagship (Ibadan)',
+      branchName: 'QuickCart (Moniya Flagship Ibadan)',
       area: 'Moniya',
       address: 'Plot 12, Oyo-Ibadan Expressway, Moniya Central (Opposite Train Station Road), Moniya, Ibadan, Oyo State',
       deliveryFee: 0,
@@ -151,7 +193,7 @@ const INITIAL_SEED_ORDERS: CompletedOrder[] = [
       address: '14 Osuntokun Avenue, Old Bodija, Ibadan',
       landmark: 'Near Bodija Market Junction',
       deliveryFee: 900,
-      estimatedTime: '25 – 35 mins'
+      estimatedTime: '25 to 35 mins'
     },
     status: 'Delivered',
     notes: 'Handed over by dispatch rider'
@@ -189,6 +231,15 @@ export default function App() {
   // Customer Checkout Details
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>('pay_on_delivery');
+  const [deliveryInstructions, setDeliveryInstructions] = useState('');
+
+  // Info & Help Modals
+  const [isStoreInfoOpen, setIsStoreInfoOpen] = useState(false);
+  const [isUnitGuideOpen, setIsUnitGuideOpen] = useState(false);
+  const [isOrderTrackerOpen, setIsOrderTrackerOpen] = useState(false);
+  const [isDeliveryZonesOpen, setIsDeliveryZonesOpen] = useState(false);
+  const [isMyOrdersOpen, setIsMyOrdersOpen] = useState(false);
 
   // LOCATION & FULFILLMENT STATE
   const [fulfillmentType, setFulfillmentType] = useState<'delivery' | 'pickup'>('delivery');
@@ -318,6 +369,34 @@ export default function App() {
     setLastParseResult(null);
     setSelectedImage(null);
     setTextInput('');
+  };
+
+  // Reorder handlers for My Orders modal
+  const handleAddToCartFromModal = (item: CatalogItem, quantity: number = 1) => {
+    updateQty(item.id, quantity);
+    playNotificationChime();
+  };
+
+  const handleReorderEntireOrder = (order: CompletedOrder) => {
+    setCart((prev) => {
+      const updated = { ...prev };
+      order.items.forEach((item) => {
+        updated[item.catalogId] = (updated[item.catalogId] || 0) + item.quantity;
+      });
+      return updated;
+    });
+    playNotificationChime();
+  };
+
+  const handleReorderFrequentItems = (items: { catalogItem: CatalogItem; quantity: number }[]) => {
+    setCart((prev) => {
+      const updated = { ...prev };
+      items.forEach(({ catalogItem, quantity }) => {
+        updated[catalogItem.id] = (updated[catalogItem.id] || 0) + quantity;
+      });
+      return updated;
+    });
+    playNotificationChime();
   };
 
   // Status Updater with Mock Browser Notification trigger
@@ -556,15 +635,38 @@ export default function App() {
       total: orderGrandTotal,
       location: orderLocation,
       status: 'Received',
+      paymentMethod,
+      deliveryInstructions: deliveryInstructions.trim() || undefined,
       notes:
         fulfillmentType === 'delivery'
           ? `Delivery to ${currentZone.name}: ${streetAddress}${landmark ? ` (Landmark: ${landmark})` : ''}`
           : `Pickup at ${currentBranch.name}`,
     };
 
+    if (customerPhone.trim()) {
+      try {
+        localStorage.setItem('quickcart_saved_customer_phone', customerPhone.trim());
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
     setOrders((prev) => [newOrder, ...prev]);
     setConfirmedOrder(newOrder);
     setCart({});
+  };
+
+  // Payment method human-readable label
+  const getPaymentMethodLabel = (method?: PaymentMethodType) => {
+    switch (method) {
+      case 'bank_transfer':
+        return 'Instant Bank Transfer (OPay / GTBank)';
+      case 'card_pos':
+        return 'POS Card Terminal on Delivery';
+      case 'pay_on_delivery':
+      default:
+        return 'Cash on Delivery';
+    }
   };
 
   // WhatsApp order share format
@@ -593,21 +695,27 @@ export default function App() {
       `🛒 *QuickCart Order #${order.orderNumber}*`,
       `Customer: ${order.customerName}`,
       order.customerPhone ? `Phone: ${order.customerPhone}` : '',
+      `Payment: ${getPaymentMethodLabel(order.paymentMethod)}`,
+      order.deliveryInstructions ? `Instructions: ${order.deliveryInstructions}` : '',
       `Status: ${order.status}`,
       '',
       ...locationLines.filter(Boolean),
       '',
       `*ORDER ITEMS:*`,
-      ...order.items.map((i) => `• ${i.quantity}x ${i.name} — ${formatNaira(i.total)}`),
+      ...order.items.map((i) => `• ${i.quantity}x ${i.name}: ${formatNaira(i.total)}`),
       '',
       `Items Subtotal: ${formatNaira(order.subtotal)}`,
       order.deliveryFee > 0 ? `Delivery Fee: ${formatNaira(order.deliveryFee)}` : `Delivery: FREE (Pickup)`,
+      `Packaging: FREE`,
       `*GRAND TOTAL: ${formatNaira(order.total)}*`,
       '',
-      `_Sent via QuickCart Supermarket AI_`,
+      order.paymentMethod === 'bank_transfer'
+        ? `*BANK TRANSFER DETAILS:* OPay: 8155379789 or GTB: 0561627855 (QuickCart Nig Ltd) - Ref: ORD-${order.orderNumber}`
+        : '',
+      `_Sent via QuickCart Moniya, Ibadan_`,
     ];
 
-    return encodeURIComponent(lines.join('\n'));
+    return encodeURIComponent(lines.filter(Boolean).join('\n'));
   };
 
   const categories = ['All', 'Grains & Staples', 'Noodles & Pasta', 'Cooking & Spices', 'Breakfast & Dairy', 'Drinks & Water', 'Household'];
@@ -636,6 +744,55 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans selection:bg-blue-100 selection:text-blue-900">
+      {/* Top Operational Status Ribbon */}
+      <div className="bg-slate-900 text-slate-200 text-xs py-1.5 px-4 border-b border-slate-800">
+        <div className="max-w-4xl mx-auto flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <span className="flex h-2 w-2 relative">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            <span className="font-medium text-slate-300">
+              Moniya Store Open (7:30 AM to 9:30 PM) • Instant Express Dispatch in Ibadan
+            </span>
+          </div>
+
+          <div className="flex items-center gap-3 text-[11px] text-slate-400">
+            <button
+              onClick={() => setIsMyOrdersOpen(true)}
+              className="hover:text-emerald-300 flex items-center gap-1 transition text-emerald-400 font-medium"
+            >
+              <History className="w-3 h-3 text-emerald-400" />
+              <span>My Orders</span>
+            </button>
+            <span className="text-slate-700">·</span>
+            <button
+              onClick={() => setIsUnitGuideOpen(true)}
+              className="hover:text-amber-300 flex items-center gap-1 transition"
+            >
+              <Scale className="w-3 h-3 text-amber-400" />
+              <span>Unit Guide (Congo/Derica)</span>
+            </button>
+            <span className="text-slate-700">·</span>
+            <button
+              onClick={() => setIsDeliveryZonesOpen(true)}
+              className="hover:text-blue-300 flex items-center gap-1 transition"
+            >
+              <Truck className="w-3 h-3 text-blue-400" />
+              <span>Delivery Zones</span>
+            </button>
+            <span className="text-slate-700">·</span>
+            <button
+              onClick={() => setIsStoreInfoOpen(true)}
+              className="hover:text-emerald-300 flex items-center gap-1 transition"
+            >
+              <Store className="w-3 h-3 text-emerald-400" />
+              <span>Store & Accounts</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* Top Navigation Bar */}
       <header className="sticky top-0 z-40 bg-white border-b border-slate-200/80 shadow-xs backdrop-blur-md">
         <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
@@ -645,7 +802,7 @@ export default function App() {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-bold text-lg text-slate-900 tracking-tight">QuickCart Supermarket</span>
+                <span className="font-bold text-lg text-slate-900 tracking-tight">QuickCart</span>
                 <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1">
                   <MapPin className="w-3 h-3 text-emerald-700" />
                   Moniya, Ibadan
@@ -658,6 +815,29 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Customer My Orders Button */}
+            <button
+              onClick={() => setIsMyOrdersOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-200 hover:border-emerald-400 bg-emerald-50/50 hover:bg-emerald-50 text-emerald-900 text-xs font-bold transition shadow-2xs"
+              title="View previous grocery orders & reorder frequent items"
+            >
+              <History className="w-3.5 h-3.5 text-emerald-600" />
+              <span>My Orders</span>
+              {orders.length > 0 && (
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 hidden sm:inline-block"></span>
+              )}
+            </button>
+
+            {/* Customer Track Order Button */}
+            <button
+              onClick={() => setIsOrderTrackerOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 hover:border-blue-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition"
+              title="Track existing order"
+            >
+              <Clock className="w-3.5 h-3.5 text-blue-600" />
+              <span className="hidden sm:inline">Track Order</span>
+            </button>
+
             {cartItemCount > 0 && (
               <button
                 onClick={() => setActiveTab('shop')}
@@ -1026,7 +1206,7 @@ export default function App() {
                         type="button"
                         onClick={() =>
                           setTextInput(
-                            'Abeg give me 1 carton indomie, 1 mudu of beans, 2kg ijebu garri and 3 peak milk'
+                            'Abeg give me 1 carton indomie, 1 congo of beans, 2kg ijebu garri and 3 peak milk'
                           )
                         }
                         className="px-2.5 py-1 text-xs rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition"
@@ -1421,7 +1601,7 @@ export default function App() {
                     {/* Customer Contact */}
                     <div className="border-t border-slate-200 pt-3">
                       <span className="text-xs font-semibold text-slate-700 block mb-2">
-                        Customer Contact Information:
+                        Customer Contact & Instructions:
                       </span>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
@@ -1450,72 +1630,292 @@ export default function App() {
                           </div>
                         </div>
                       </div>
+
+                      {/* Delivery / Special Handling Instructions */}
+                      <div className="mt-3">
+                        <label className="block text-xs font-semibold text-slate-700 mb-1">
+                          Delivery Instructions / Gate Security Note (Optional):
+                        </label>
+                        <input
+                          type="text"
+                          value={deliveryInstructions}
+                          onChange={(e) => setDeliveryInstructions(e.target.value)}
+                          placeholder="e.g. Call my number when at the estate gate, separate food & household items"
+                          className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        />
+                      </div>
+                    </div>
+
+                    {/* PAYMENT METHOD SELECTION */}
+                    <div className="border-t border-slate-200 pt-3 space-y-2">
+                      <span className="text-xs font-semibold text-slate-700 block">
+                        Select Payment Method:
+                      </span>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setPaymentMethod('pay_on_delivery')}
+                          className={`p-3 rounded-xl border text-left transition flex flex-col justify-between ${
+                            paymentMethod === 'pay_on_delivery'
+                              ? 'border-blue-600 bg-blue-50/70 ring-2 ring-blue-500/20'
+                              : 'border-slate-200 bg-white hover:bg-slate-50'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-slate-900">Cash on Delivery</span>
+                            {paymentMethod === 'pay_on_delivery' && (
+                              <Check className="w-3.5 h-3.5 text-blue-600" />
+                            )}
+                          </div>
+                          <span className="text-[11px] text-slate-500 mt-1">
+                            Pay physical cash to dispatch rider upon arrival
+                          </span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setPaymentMethod('bank_transfer')}
+                          className={`p-3 rounded-xl border text-left transition flex flex-col justify-between ${
+                            paymentMethod === 'bank_transfer'
+                              ? 'border-blue-600 bg-blue-50/70 ring-2 ring-blue-500/20'
+                              : 'border-slate-200 bg-white hover:bg-slate-50'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-slate-900">Instant Bank Transfer</span>
+                            {paymentMethod === 'bank_transfer' && (
+                              <Check className="w-3.5 h-3.5 text-blue-600" />
+                            )}
+                          </div>
+                          <span className="text-[11px] text-slate-500 mt-1">
+                            OPay / GTBank (Instant payment confirmation)
+                          </span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setPaymentMethod('card_pos')}
+                          className={`p-3 rounded-xl border text-left transition flex flex-col justify-between ${
+                            paymentMethod === 'card_pos'
+                              ? 'border-blue-600 bg-blue-50/70 ring-2 ring-blue-500/20'
+                              : 'border-slate-200 bg-white hover:bg-slate-50'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-slate-900">POS Card on Delivery</span>
+                            {paymentMethod === 'card_pos' && (
+                              <Check className="w-3.5 h-3.5 text-blue-600" />
+                            )}
+                          </div>
+                          <span className="text-[11px] text-slate-500 mt-1">
+                            Rider brings handheld POS terminal to swipe debit card
+                          </span>
+                        </button>
+                      </div>
+
+                      {paymentMethod === 'bank_transfer' && (
+                        <div className="mt-2 p-3 bg-white rounded-xl border border-blue-200 text-xs text-slate-700 space-y-2.5">
+                          <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
+                            <span className="font-bold text-blue-900">Verified Accounts:</span>
+                            <span className="text-[11px] text-slate-500 font-medium">QuickCart Nig Ltd</span>
+                          </div>
+
+                          {/* OPay */}
+                          <div className="flex items-center justify-between pt-0.5">
+                            <div>
+                              <span className="font-bold text-emerald-700 text-[11px] block uppercase">OPay</span>
+                              <span className="font-mono font-bold text-sm text-slate-900">8155379789</span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                navigator.clipboard.writeText('8155379789');
+                                alert('OPay account 8155379789 copied to clipboard!');
+                              }}
+                              className="px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-semibold flex items-center gap-1 transition"
+                            >
+                              <Copy className="w-3 h-3" />
+                              <span>Copy OPay</span>
+                            </button>
+                          </div>
+
+                          {/* GTB */}
+                          <div className="flex items-center justify-between border-t border-slate-100 pt-1.5">
+                            <div>
+                              <span className="font-bold text-orange-600 text-[11px] block uppercase">Guaranty Trust Bank (GTB)</span>
+                              <span className="font-mono font-bold text-sm text-slate-900">0561627855</span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                navigator.clipboard.writeText('0561627855');
+                                alert('GTB account 0561627855 copied to clipboard!');
+                              }}
+                              className="px-2.5 py-1 rounded-lg bg-orange-50 hover:bg-orange-100 text-orange-800 text-xs font-semibold flex items-center gap-1 transition"
+                            >
+                              <Copy className="w-3 h-3" />
+                              <span>Copy GTB</span>
+                            </button>
+                          </div>
+
+                          <p className="text-[11px] text-slate-500 pt-0.5">
+                            Please use your Order Number (e.g. ORD-105) as payment narration/reference.
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
 
-                  {/* Total & Confirmation Card */}
-                  <div className="pt-2 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
-                    <div className="text-center sm:text-left space-y-0.5">
-                      <div className="text-xs text-slate-500">
-                        Groceries: {formatNaira(cartSubtotal)} · Delivery:{' '}
-                        {deliveryFee > 0 ? formatNaira(deliveryFee) : 'FREE'}
+                  {/* Detailed Billing Breakdown & Confirmation */}
+                  <div className="pt-3 border-t border-slate-200 space-y-3">
+                    <div className="bg-slate-50 rounded-xl p-3.5 border border-slate-200/80 text-xs space-y-1.5">
+                      <div className="flex justify-between text-slate-600">
+                        <span>Groceries Subtotal ({cartItemCount} items):</span>
+                        <span className="font-semibold text-slate-900">{formatNaira(cartSubtotal)}</span>
                       </div>
-                      <div className="text-2xl font-black text-slate-900">
-                        {formatNaira(orderGrandTotal)}
+                      <div className="flex justify-between text-slate-600">
+                        <span>
+                          {fulfillmentType === 'delivery'
+                            ? `Delivery to ${currentZone.name}:`
+                            : `Store Pickup (${currentBranch.area}):`}
+                        </span>
+                        <span className="font-semibold text-slate-900">
+                          {deliveryFee > 0 ? formatNaira(deliveryFee) : 'FREE'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-emerald-700">
+                        <span>Eco-Friendly Bagging & Packaging:</span>
+                        <span className="font-bold">FREE (₦0)</span>
+                      </div>
+                      <div className="border-t border-slate-200 pt-2 flex justify-between text-base font-black text-slate-900">
+                        <span>Grand Total:</span>
+                        <span className="text-blue-700 text-lg">{formatNaira(orderGrandTotal)}</span>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-3 w-full sm:w-auto">
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-1">
+                      <div className="flex items-center gap-2 text-xs text-slate-500">
+                        <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                        <span>100% Genuine stock · Moniya Flagship Store dispatch</span>
+                      </div>
+
                       <button
                         type="button"
                         onClick={handleConfirmOrder}
-                        className="flex-1 sm:flex-initial px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white font-bold text-sm shadow-md shadow-emerald-600/20 transition flex items-center justify-center gap-2"
+                        className="w-full sm:w-auto px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white font-bold text-sm shadow-md shadow-emerald-600/20 transition flex items-center justify-center gap-2"
                       >
                         <CheckCircle2 className="w-5 h-5" />
-                        <span>Confirm & Place Order</span>
+                        <span>Confirm & Place Order ({formatNaira(orderGrandTotal)})</span>
                       </button>
                     </div>
                   </div>
                 </div>
               )}
             </div>
+
+            {/* Informational Customer Highlights */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <button
+                type="button"
+                onClick={() => setIsUnitGuideOpen(true)}
+                className="p-4 rounded-2xl border border-slate-200 bg-white hover:border-amber-400 hover:bg-amber-50/20 text-left transition space-y-1"
+              >
+                <div className="flex items-center gap-2 text-amber-700 font-bold text-xs">
+                  <Scale className="w-4 h-4" />
+                  <span>Market Unit Guide</span>
+                </div>
+                <p className="text-[11px] text-slate-500 leading-relaxed">
+                  Understand Congo (1.2kg), Derica (850g), Paint Rubber (4kg) and Egg Crates.
+                </p>
+                <span className="text-[11px] text-amber-700 font-bold hover:underline inline-block pt-1">
+                  Read Conversion Table &rarr;
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsDeliveryZonesOpen(true)}
+                className="p-4 rounded-2xl border border-slate-200 bg-white hover:border-blue-400 hover:bg-blue-50/20 text-left transition space-y-1"
+              >
+                <div className="flex items-center gap-2 text-blue-700 font-bold text-xs">
+                  <Truck className="w-4 h-4" />
+                  <span>Delivery Zones & ETA</span>
+                </div>
+                <p className="text-[11px] text-slate-500 leading-relaxed">
+                  Flat-rate motorcycle dispatch across Moniya, Ojoo, Bodija, UI, Ring Road & Dugbe.
+                </p>
+                <span className="text-[11px] text-blue-700 font-bold hover:underline inline-block pt-1">
+                  View All 11 Zones &rarr;
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsStoreInfoOpen(true)}
+                className="p-4 rounded-2xl border border-slate-200 bg-white hover:border-emerald-400 hover:bg-emerald-50/20 text-left transition space-y-1"
+              >
+                <div className="flex items-center gap-2 text-emerald-700 font-bold text-xs">
+                  <Store className="w-4 h-4" />
+                  <span>Store Hours & Accounts</span>
+                </div>
+                <p className="text-[11px] text-slate-500 leading-relaxed">
+                  Moniya store hours (7:30 AM to 9:30 PM), customer hotline (+2348155379789), verified bank accounts.
+                </p>
+                <span className="text-[11px] text-emerald-700 font-bold hover:underline inline-block pt-1">
+                  Store Details & Bank Info &rarr;
+                </span>
+              </button>
+            </div>
+
+            {/* Customer FAQ Accordion */}
+            <FaqSection />
           </div>
         )}
 
         {/* TAB 2: STORE CATALOG */}
         {activeTab === 'catalog' && (
           <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs">
               <div>
-                <h2 className="text-lg font-bold text-slate-900">Supermarket Catalog</h2>
-                <p className="text-xs text-slate-500">
-                  All items in stock with standard Nigerian retail prices
+                <h2 className="text-lg font-bold text-slate-900 tracking-tight">Supermarket Catalog</h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Verified stock at Moniya Flagship Store with direct Nigerian retail prices
                 </p>
               </div>
 
               {/* Search */}
-              <div className="relative min-w-[240px]">
+              <div className="relative min-w-[260px]">
                 <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
                 <input
                   type="text"
                   value={catalogSearch}
                   onChange={(e) => setCatalogSearch(e.target.value)}
-                  placeholder="Search rice, indomie, oil..."
-                  className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50"
+                  placeholder="Search rice, indomie, oil, congo..."
+                  className="w-full pl-9 pr-8 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50"
                 />
+                {catalogSearch && (
+                  <button
+                    type="button"
+                    onClick={() => setCatalogSearch('')}
+                    className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-700"
+                    title="Clear search"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
             </div>
 
-            {/* Category Filter Pills */}
-            <div className="flex gap-1.5 overflow-x-auto pb-1 text-xs">
+            {/* Category Segmented Controls */}
+            <div className="flex gap-1.5 overflow-x-auto pb-1 text-xs p-1 bg-slate-100 rounded-xl">
               {categories.map((cat) => (
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
-                  className={`px-3 py-1.5 rounded-full font-medium whitespace-nowrap transition ${
+                  className={`px-3 py-1.5 rounded-lg font-semibold whitespace-nowrap transition ${
                     selectedCategory === cat
-                      ? 'bg-blue-600 text-white shadow-xs'
-                      : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                      ? 'bg-white text-slate-900 shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
                   }`}
                 >
                   {cat}
@@ -1524,64 +1924,100 @@ export default function App() {
             </div>
 
             {/* Catalog Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-              {filteredCatalog.map((item) => {
-                const inCartQty = cart[item.id] || 0;
-                return (
-                  <div
-                    key={item.id}
-                    className="bg-white rounded-xl border border-slate-200 p-4 shadow-xs flex flex-col justify-between hover:border-blue-300 transition"
-                  >
-                    <div>
-                      <div className="flex items-start justify-between gap-2">
-                        <span className="text-[10px] font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md">
-                          {item.category}
-                        </span>
-                        {item.popular && (
-                          <span className="text-[10px] font-semibold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded-md">
-                            Popular
+            {filteredCatalog.length === 0 ? (
+              <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center space-y-3">
+                <Search className="w-10 h-10 mx-auto text-slate-300" />
+                <div className="font-bold text-sm text-slate-800">No supermarket items found</div>
+                <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                  We couldn&apos;t find any grocery item matching &ldquo;{catalogSearch}&rdquo;. Try searching for general terms like rice, milk, beans, or bread.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCatalogSearch('');
+                    setSelectedCategory('All');
+                  }}
+                  className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs transition"
+                >
+                  Reset Catalog Filters
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5">
+                {filteredCatalog.map((item) => {
+                  const inCartQty = cart[item.id] || 0;
+                  return (
+                    <div
+                      key={item.id}
+                      className="bg-white rounded-xl border border-slate-200/90 p-4 shadow-xs flex flex-col justify-between hover:border-blue-400 hover:shadow-sm transition"
+                    >
+                      <div className="space-y-1.5">
+                        {/* Clean Unboxed Metadata per Frontend Design Skill */}
+                        <div className="flex items-center justify-between text-[11px] text-slate-500">
+                          <span className="font-medium text-blue-700">{item.category}</span>
+                          <span className="text-slate-300">·</span>
+                          <span className="text-emerald-700 font-medium">
+                            In Stock ({item.stockCount || 25})
                           </span>
+                        </div>
+
+                        <h3 className="font-bold text-sm text-slate-900 leading-snug">{item.name}</h3>
+
+                        {item.marketEquivalents && (
+                          <div className="text-[11px] text-amber-800 font-medium bg-amber-50/70 px-2 py-0.5 rounded-md inline-block">
+                            ⚖️ {item.marketEquivalents}
+                          </div>
                         )}
-                      </div>
-                      <h3 className="font-bold text-sm text-slate-900 mt-2">{item.name}</h3>
-                      <p className="text-xs text-slate-400">{item.unit}</p>
-                    </div>
 
-                    <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
-                      <div className="font-extrabold text-sm text-slate-900">
-                        {formatNaira(item.price)}
+                        <div className="text-xs text-slate-400 flex items-center gap-1.5">
+                          <span>Unit: {item.unit}</span>
+                          {item.popular && (
+                            <>
+                              <span className="text-slate-300">·</span>
+                              <span className="text-amber-700 font-medium">Top Choice</span>
+                            </>
+                          )}
+                        </div>
                       </div>
 
-                      {inCartQty > 0 ? (
-                        <div className="flex items-center gap-1.5 bg-blue-50 rounded-lg p-1">
-                          <button
-                            onClick={() => updateQty(item.id, -1)}
-                            className="w-6 h-6 rounded bg-white text-slate-700 hover:bg-slate-100 flex items-center justify-center text-xs font-bold shadow-xs"
-                          >
-                            <Minus className="w-3 h-3" />
-                          </button>
-                          <span className="text-xs font-bold text-blue-800 px-1">{inCartQty}</span>
+                      <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+                        <div className="font-black text-sm text-slate-900">
+                          {formatNaira(item.price)}
+                        </div>
+
+                        {inCartQty > 0 ? (
+                          <div className="flex items-center gap-1.5 bg-blue-50 rounded-lg p-1">
+                            <button
+                              onClick={() => updateQty(item.id, -1)}
+                              className="w-6 h-6 rounded bg-white text-slate-700 hover:bg-slate-100 flex items-center justify-center text-xs font-bold shadow-xs transition"
+                              title="Decrease"
+                            >
+                              <Minus className="w-3 h-3" />
+                            </button>
+                            <span className="text-xs font-bold text-blue-800 px-1">{inCartQty}</span>
+                            <button
+                              onClick={() => updateQty(item.id, 1)}
+                              className="w-6 h-6 rounded bg-blue-600 text-white hover:bg-blue-700 flex items-center justify-center text-xs font-bold shadow-xs transition"
+                              title="Increase"
+                            >
+                              <Plus className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ) : (
                           <button
                             onClick={() => updateQty(item.id, 1)}
-                            className="w-6 h-6 rounded bg-blue-600 text-white hover:bg-blue-700 flex items-center justify-center text-xs font-bold shadow-xs"
+                            className="px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-600 hover:text-white text-blue-700 text-xs font-semibold transition flex items-center gap-1"
                           >
-                            <Plus className="w-3 h-3" />
+                            <Plus className="w-3.5 h-3.5" />
+                            <span>Add to Bill</span>
                           </button>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={() => updateQty(item.id, 1)}
-                          className="px-2.5 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-600 hover:text-white text-blue-700 text-xs font-semibold transition flex items-center gap-1"
-                        >
-                          <Plus className="w-3.5 h-3.5" />
-                          <span>Add to Order</span>
-                        </button>
-                      )}
+                        )}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
 
@@ -1902,10 +2338,62 @@ export default function App() {
                 <span>Date:</span>
                 <span>{confirmedOrder.createdAt}</span>
               </div>
+              <div className="flex justify-between">
+                <span className="font-bold">Payment Method:</span>
+                <span className="font-sans font-semibold text-slate-800">
+                  {getPaymentMethodLabel(confirmedOrder.paymentMethod)}
+                </span>
+              </div>
+
+              {/* Bank Transfer Details if selected */}
+              {confirmedOrder.paymentMethod === 'bank_transfer' && (
+                <div className="p-2.5 rounded-lg bg-blue-50 border border-blue-200 font-sans text-xs text-blue-950 space-y-1.5">
+                  <div className="font-bold text-blue-900 border-b border-blue-200/60 pb-1">
+                    Verified Bank Transfer Details
+                  </div>
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="font-bold text-emerald-700 uppercase">OPay: 8155379789</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText('8155379789');
+                        alert('OPay account 8155379789 copied!');
+                      }}
+                      className="text-[11px] text-emerald-800 underline font-semibold"
+                    >
+                      Copy OPay
+                    </button>
+                  </div>
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="font-bold text-orange-700 uppercase">GTB: 0561627855</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText('0561627855');
+                        alert('GTB account 0561627855 copied!');
+                      }}
+                      className="text-[11px] text-orange-800 underline font-semibold"
+                    >
+                      Copy GTB
+                    </button>
+                  </div>
+                  <div className="text-[10px] text-slate-600">QuickCart Nig Ltd</div>
+                  <div className="text-[10px] text-blue-800 font-medium pt-0.5">
+                    Narration Ref: ORD-{confirmedOrder.orderNumber}
+                  </div>
+                </div>
+              )}
+
+              {/* Special Instructions if provided */}
+              {confirmedOrder.deliveryInstructions && (
+                <div className="p-2 rounded bg-amber-50/70 border border-amber-200 font-sans text-[11px] text-amber-900">
+                  <strong>Instructions:</strong> {confirmedOrder.deliveryInstructions}
+                </div>
+              )}
 
               {/* Location details */}
               <div className="border-t border-slate-200 pt-2 pb-2 border-b border-dashed space-y-1">
-                <div className="font-bold text-blue-900">
+                <div className="font-bold text-blue-900 font-sans">
                   {confirmedOrder.location.type === 'pickup' ? '🏪 STORE PICKUP:' : '🛵 HOME DELIVERY:'}
                 </div>
                 {confirmedOrder.location.type === 'pickup' ? (
@@ -1951,6 +2439,10 @@ export default function App() {
                   <span>Delivery Fee:</span>
                   <span>{confirmedOrder.deliveryFee > 0 ? formatNaira(confirmedOrder.deliveryFee) : 'FREE'}</span>
                 </div>
+                <div className="flex justify-between text-emerald-700">
+                  <span>Bagging & Packaging:</span>
+                  <span className="font-bold">FREE</span>
+                </div>
               </div>
 
               <div className="border-t-2 border-slate-300 pt-2 flex justify-between font-bold text-sm text-slate-900">
@@ -1962,22 +2454,47 @@ export default function App() {
             {/* Quick Actions */}
             <div className="space-y-2 pt-2">
               <a
-                href={`https://wa.me/?text=${generateWhatsAppMessage(confirmedOrder)}`}
+                href={`https://wa.me/2348083918979?text=${generateWhatsAppMessage(confirmedOrder)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition flex items-center justify-center gap-2"
               >
                 <Share2 className="w-4 h-4" />
-                <span>Send Receipt to Supermarket on WhatsApp</span>
+                <span>Send Receipt to QuickCart on WhatsApp (+2348083918979)</span>
               </a>
 
-              <button
-                type="button"
-                onClick={() => setConfirmedOrder(null)}
-                className="w-full py-2 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 font-semibold text-xs transition"
-              >
-                Close & Return to Shop
-              </button>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsOrderTrackerOpen(true);
+                  }}
+                  className="flex-1 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold text-xs transition flex items-center justify-center gap-1.5"
+                >
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>Track Live Status</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setConfirmedOrder(null);
+                    setIsMyOrdersOpen(true);
+                  }}
+                  className="flex-1 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-semibold text-xs transition flex items-center justify-center gap-1.5"
+                >
+                  <History className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>My Orders</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setConfirmedOrder(null)}
+                  className="px-3 py-2 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 font-semibold text-xs transition"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1999,13 +2516,93 @@ export default function App() {
         ))}
       </div>
 
-      {/* Footer */}
-      <footer className="mt-auto border-t border-slate-200 bg-white py-4 text-center text-xs text-slate-400">
-        <div className="max-w-4xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span>QuickCart Supermarket • Moniya, Ibadan, Oyo State</span>
-          <span>Prices in Nigerian Naira (₦)</span>
+      {/* Mobile Floating Cart Summary */}
+      {cartItemCount > 0 && activeTab !== 'shop' && (
+        <div className="fixed bottom-4 left-4 right-4 z-40 sm:hidden">
+          <button
+            onClick={() => setActiveTab('shop')}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white p-3.5 rounded-2xl shadow-xl flex items-center justify-between font-bold text-xs transition"
+          >
+            <div className="flex items-center gap-2">
+              <ShoppingBag className="w-4 h-4" />
+              <span>{cartItemCount} item{cartItemCount > 1 ? 's' : ''} in cart</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span>{formatNaira(orderGrandTotal)}</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </div>
+          </button>
+        </div>
+      )}
+
+      {/* Footer with Store Policy & Contact Info */}
+      <footer className="mt-auto border-t border-slate-200 bg-white py-6 text-xs text-slate-500">
+        <div className="max-w-4xl mx-auto px-4 space-y-4">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-b border-slate-100 pb-4">
+            <div className="flex items-center gap-2 text-slate-900 font-bold">
+              <ShoppingBag className="w-4 h-4 text-blue-600" />
+              <span>QuickCart Moniya</span>
+              <span className="text-slate-400 font-normal">· Ibadan, Oyo State</span>
+            </div>
+            <div className="flex flex-wrap gap-3 text-[11px] text-slate-500">
+              <button onClick={() => setIsMyOrdersOpen(true)} className="hover:text-emerald-600 font-semibold text-emerald-700">My Orders & Reorder</button>
+              <span>·</span>
+              <button onClick={() => setIsStoreInfoOpen(true)} className="hover:text-blue-600">Store Hours</button>
+              <span>·</span>
+              <button onClick={() => setIsDeliveryZonesOpen(true)} className="hover:text-blue-600">Delivery Rates</button>
+              <span>·</span>
+              <button onClick={() => setIsUnitGuideOpen(true)} className="hover:text-blue-600">Market Unit Guide</button>
+              <span>·</span>
+              <button onClick={() => setIsOrderTrackerOpen(true)} className="hover:text-blue-600">Order Tracker</button>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-slate-400">
+            <span>© {new Date().getFullYear()} QuickCart Moniya. All prices in Nigerian Naira (₦).</span>
+            <span>Moniya Flagship: Opposite Train Station Road, Oyo-Ibadan Expressway</span>
+          </div>
         </div>
       </footer>
+
+      {/* Store Info & Official Bank Accounts Modal */}
+      <StoreInfoModal
+        isOpen={isStoreInfoOpen}
+        onClose={() => setIsStoreInfoOpen(false)}
+      />
+
+      {/* Nigerian Market Unit Guide Modal */}
+      <UnitGuideModal
+        isOpen={isUnitGuideOpen}
+        onClose={() => setIsUnitGuideOpen(false)}
+      />
+
+      {/* Customer Order Tracker Modal */}
+      <CustomerOrderTrackerModal
+        isOpen={isOrderTrackerOpen}
+        onClose={() => setIsOrderTrackerOpen(false)}
+        orders={orders}
+        onOpenOrderReceipt={(ord) => setConfirmedOrder(ord)}
+      />
+
+      {/* Customer My Orders & Frequent Groceries Modal */}
+      <MyOrdersModal
+        isOpen={isMyOrdersOpen}
+        onClose={() => setIsMyOrdersOpen(false)}
+        orders={orders}
+        initialPhone={customerPhone}
+        onSelectOrderReceipt={(ord) => setConfirmedOrder(ord)}
+        onAddToCart={handleAddToCartFromModal}
+        onReorderEntireOrder={handleReorderEntireOrder}
+        onReorderFrequentItems={handleReorderFrequentItems}
+        currentCart={cart}
+      />
+
+      {/* Ibadan Delivery Zones & Rates Modal */}
+      <DeliveryZonesModal
+        isOpen={isDeliveryZonesOpen}
+        onClose={() => setIsDeliveryZonesOpen(false)}
+        onSelectZone={(zoneId) => setSelectedZoneId(zoneId)}
+      />
     </div>
   );
 }

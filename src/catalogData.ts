@@ -1,6 +1,6 @@
 import { CatalogItem } from './types.ts';
 
-export const CATALOG: CatalogItem[] = [
+const RAW_CATALOG: CatalogItem[] = [
   // Grains & Staples
   {
     id: 'rice_5kg',
@@ -8,8 +8,11 @@ export const CATALOG: CatalogItem[] = [
     category: 'Grains & Staples',
     price: 8500,
     unit: 'bag (5kg)',
-    aliases: ['rice', 'bag of rice', 'mudu of rice', 'caprice', 'mama gold', 'parboiled rice', '5kg rice'],
+    aliases: ['rice', 'bag of rice', 'congo of rice', 'caprice', 'mama gold', 'parboiled rice', '5kg rice'],
     popular: true,
+    stockCount: 42,
+    marketEquivalents: '≈ 4 congo (clean stone-free)',
+    tag: 'Daily Essential',
   },
   {
     id: 'rice_50kg',
@@ -19,6 +22,9 @@ export const CATALOG: CatalogItem[] = [
     unit: 'bag (50kg)',
     aliases: ['50kg rice', 'full bag rice', 'big rice bag', 'big bag of rice'],
     popular: false,
+    stockCount: 15,
+    marketEquivalents: 'Full 50kg bag (wholesale sealed)',
+    tag: 'Bulk Saver',
   },
   {
     id: 'beans_1kg',
@@ -26,8 +32,11 @@ export const CATALOG: CatalogItem[] = [
     category: 'Grains & Staples',
     price: 2200,
     unit: '1kg bag',
-    aliases: ['bean', 'beans', 'oloyin beans', 'brown bean', 'mudu beans', 'iron beans'],
+    aliases: ['bean', 'beans', 'oloyin beans', 'brown bean', 'congo beans', 'iron beans'],
     popular: true,
+    stockCount: 38,
+    marketEquivalents: '≈ 1 congo (sweet oloyin)',
+    tag: 'High Protein',
   },
   {
     id: 'garri_1kg',
@@ -37,6 +46,9 @@ export const CATALOG: CatalogItem[] = [
     unit: '1kg pack',
     aliases: ['garri', 'gari', 'ijebu garri', 'white garri', 'yellow garri', 'cassava flakes'],
     popular: true,
+    stockCount: 55,
+    marketEquivalents: '1 derica pack (crispy & sour)',
+    tag: 'Ijebu Classic',
   },
   {
     id: 'semovita_2kg',
@@ -46,6 +58,9 @@ export const CATALOG: CatalogItem[] = [
     unit: '2kg pack',
     aliases: ['semo', 'semovita', 'golden penny semo', 'semolina'],
     popular: false,
+    stockCount: 24,
+    marketEquivalents: 'Fortified wheat swallow (2kg)',
+    tag: 'Swallow Staple',
   },
   {
     id: 'yam_tuber',
@@ -55,6 +70,9 @@ export const CATALOG: CatalogItem[] = [
     unit: 'tuber',
     aliases: ['yam', 'tuber of yam', 'yams', 'white yam'],
     popular: true,
+    stockCount: 20,
+    marketEquivalents: 'Direct from Oyo farm market',
+    tag: 'Fresh Farm Produce',
   },
 
   // Noodles & Pasta
@@ -66,6 +84,9 @@ export const CATALOG: CatalogItem[] = [
     unit: 'pack',
     aliases: ['indomie', 'noodle', 'noodles', 'super pack', 'onion chicken'],
     popular: true,
+    stockCount: 180,
+    marketEquivalents: 'Standard 70g onion chicken single',
+    tag: 'Quick Snack',
   },
   {
     id: 'indomie_carton',
@@ -75,6 +96,9 @@ export const CATALOG: CatalogItem[] = [
     unit: 'carton (40pcs)',
     aliases: ['carton of indomie', 'indomie carton', 'box of indomie', 'case of noodles'],
     popular: true,
+    stockCount: 30,
+    marketEquivalents: 'Full factory sealed carton (40 packs)',
+    tag: 'Family Carton',
   },
   {
     id: 'spaghetti_500g',
@@ -84,6 +108,9 @@ export const CATALOG: CatalogItem[] = [
     unit: 'pack (500g)',
     aliases: ['spaghetti', 'spag', 'pasta', 'golden penny spaghetti'],
     popular: true,
+    stockCount: 65,
+    marketEquivalents: 'Standard 500g spaghetti pack',
+    tag: 'Fast Cooking',
   },
   {
     id: 'macaroni_500g',
@@ -93,6 +120,9 @@ export const CATALOG: CatalogItem[] = [
     unit: 'pack (500g)',
     aliases: ['macaroni', 'elbow macaroni', 'twist pasta'],
     popular: false,
+    stockCount: 32,
+    marketEquivalents: 'Short elbow macaroni (500g)',
+    tag: 'Kids Favorite',
   },
 
   // Cooking & Spices
@@ -104,6 +134,9 @@ export const CATALOG: CatalogItem[] = [
     unit: 'tin (70g)',
     aliases: ['tomato', 'tomato paste', 'tin tomato', 'gino tomato', 'tin of tomato', 'puree'],
     popular: true,
+    stockCount: 120,
+    marketEquivalents: '70g compact tin (thick concentrate)',
+    tag: 'Stew Essential',
   },
   {
     id: 'tomato_sachet_roll',
@@ -113,6 +146,9 @@ export const CATALOG: CatalogItem[] = [
     unit: 'roll of 5',
     aliases: ['sachet tomato', 'roll tomato', 'tomato sachet', '5 sachets tomato'],
     popular: false,
+    stockCount: 45,
+    marketEquivalents: '5 individual sachets (65g each)',
+    tag: 'Convenience Pack',
   },
   {
     id: 'veg_oil_1l',
@@ -122,6 +158,9 @@ export const CATALOG: CatalogItem[] = [
     unit: '1L bottle',
     aliases: ['oil', 'veg oil', 'vegetable oil', 'kings oil', 'groundnut oil', 'fry oil'],
     popular: true,
+    stockCount: 50,
+    marketEquivalents: 'Pure refined vegetable cooking oil (1L)',
+    tag: 'Cholesterol Free',
   },
   {
     id: 'palm_oil_1l',
@@ -131,6 +170,9 @@ export const CATALOG: CatalogItem[] = [
     unit: '1L bottle',
     aliases: ['palm oil', 'red oil', 'epo', 'banga oil'],
     popular: false,
+    stockCount: 30,
+    marketEquivalents: 'Osun traditional filtered palm oil',
+    tag: 'Traditional Stew & Soup',
   },
   {
     id: 'maggi_cubes',
@@ -140,6 +182,9 @@ export const CATALOG: CatalogItem[] = [
     unit: 'pack (100 cubes)',
     aliases: ['maggi', 'seasoning cubes', 'star maggi', 'magi', 'bouillon cubes'],
     popular: true,
+    stockCount: 85,
+    marketEquivalents: '100 cubes pack (iodized seasoning)',
+    tag: 'Kitchen Classic',
   },
   {
     id: 'knorr_chicken',
@@ -149,6 +194,9 @@ export const CATALOG: CatalogItem[] = [
     unit: 'pack',
     aliases: ['knorr', 'knorr cubes', 'chicken seasoning', 'knorr chicken'],
     popular: false,
+    stockCount: 40,
+    marketEquivalents: '50 double cubes (deep chicken broth)',
+    tag: 'Rich Taste',
   },
   {
     id: 'curry_thyme_set',
@@ -158,6 +206,9 @@ export const CATALOG: CatalogItem[] = [
     unit: 'duo pack',
     aliases: ['curry', 'thyme', 'curry and thyme', 'spices'],
     popular: false,
+    stockCount: 60,
+    marketEquivalents: '1 Lion Curry (25g) + 1 Thyme (25g)',
+    tag: 'Aromatic Duo',
   },
   {
     id: 'table_salt',
@@ -167,6 +218,9 @@ export const CATALOG: CatalogItem[] = [
     unit: '500g sachet',
     aliases: ['salt', 'iodized salt', 'table salt'],
     popular: false,
+    stockCount: 95,
+    marketEquivalents: 'Refined 500g fine table salt',
+    tag: 'Iodized',
   },
   {
     id: 'fresh_onions',
@@ -176,6 +230,9 @@ export const CATALOG: CatalogItem[] = [
     unit: 'basket',
     aliases: ['onion', 'onions', 'red onions', 'basket of onions', 'alubosa'],
     popular: true,
+    stockCount: 28,
+    marketEquivalents: '≈ 8 to 10 medium firm dry onions',
+    tag: 'Market Fresh',
   },
 
   // Breakfast & Dairy
@@ -187,6 +244,9 @@ export const CATALOG: CatalogItem[] = [
     unit: 'tin (160g)',
     aliases: ['peak milk', 'milk', 'tin milk', 'peak evaporated', 'evap milk'],
     popular: true,
+    stockCount: 110,
+    marketEquivalents: '160g full cream creamy tin',
+    tag: 'Rich & Creamy',
   },
   {
     id: 'peak_milk_powder',
@@ -196,6 +256,9 @@ export const CATALOG: CatalogItem[] = [
     unit: 'pouch (350g)',
     aliases: ['powdered milk', 'peak powder', 'peak refill'],
     popular: false,
+    stockCount: 40,
+    marketEquivalents: 'Zip-lock refill pouch (350g)',
+    tag: 'Instant Dissolve',
   },
   {
     id: 'milo_500g',
@@ -205,6 +268,9 @@ export const CATALOG: CatalogItem[] = [
     unit: 'refill pouch (500g)',
     aliases: ['milo', 'chocolate drink', 'milo refill', 'cocoa'],
     popular: true,
+    stockCount: 52,
+    marketEquivalents: 'Activ-Go malt & cocoa 500g',
+    tag: 'Energy Drink',
   },
   {
     id: 'sugar_500g',
@@ -214,6 +280,9 @@ export const CATALOG: CatalogItem[] = [
     unit: 'box (500g)',
     aliases: ['sugar', 'st louis sugar', 'cube sugar', 'sugar cubes'],
     popular: true,
+    stockCount: 75,
+    marketEquivalents: 'Original cube sugar 500g box',
+    tag: 'Breakfast Favorite',
   },
   {
     id: 'sliced_bread',
@@ -223,6 +292,9 @@ export const CATALOG: CatalogItem[] = [
     unit: 'loaf',
     aliases: ['bread', 'sliced bread', 'loaf of bread', 'agege bread', 'family bread'],
     popular: true,
+    stockCount: 35,
+    marketEquivalents: 'Freshly baked family loaf (850g)',
+    tag: 'Daily Oven Fresh',
   },
   {
     id: 'eggs_crate',
@@ -232,6 +304,9 @@ export const CATALOG: CatalogItem[] = [
     unit: 'crate (30 eggs)',
     aliases: ['egg', 'eggs', 'crate of egg', 'crate of eggs', 'crate eggs'],
     popular: true,
+    stockCount: 30,
+    marketEquivalents: 'Full crate of 30 large farm eggs',
+    tag: 'Egg Crate (30pcs)',
   },
   {
     id: 'golden_morn_500g',
@@ -241,6 +316,9 @@ export const CATALOG: CatalogItem[] = [
     unit: '500g pack',
     aliases: ['golden morn', 'cereal', 'maize cereal'],
     popular: false,
+    stockCount: 35,
+    marketEquivalents: 'Whole maize & soya 500g',
+    tag: 'Nutritious Breakfast',
   },
 
   // Drinks & Water
@@ -252,6 +330,9 @@ export const CATALOG: CatalogItem[] = [
     unit: 'bottle (75cl)',
     aliases: ['water', 'bottled water', 'eva water', 'pure water bottle', 'table water'],
     popular: true,
+    stockCount: 140,
+    marketEquivalents: 'Chilled or ambient 75cl bottle',
+    tag: 'Pure Spring Water',
   },
   {
     id: 'water_pack_12',
@@ -261,6 +342,9 @@ export const CATALOG: CatalogItem[] = [
     unit: 'pack (12 bottles)',
     aliases: ['pack of water', 'water pack', 'carton of water', '12 bottles water'],
     popular: true,
+    stockCount: 45,
+    marketEquivalents: 'Shrink-wrapped pack of 12 bottles',
+    tag: 'Bulk Pack',
   },
   {
     id: 'maltina_can',
@@ -270,6 +354,9 @@ export const CATALOG: CatalogItem[] = [
     unit: 'can (33cl)',
     aliases: ['malt', 'maltina', 'can malt'],
     popular: false,
+    stockCount: 70,
+    marketEquivalents: 'Cold 33cl slim can',
+    tag: 'Refreshing Malt',
   },
 
   // Household
@@ -281,6 +368,9 @@ export const CATALOG: CatalogItem[] = [
     unit: '1kg bag',
     aliases: ['detergent', 'washing soap', 'sunlight detergent', 'soap powder', 'omo'],
     popular: true,
+    stockCount: 48,
+    marketEquivalents: 'Spring sensations 1kg laundry pack',
+    tag: 'Fabric Care',
   },
   {
     id: 'dishwash_liquid',
@@ -290,6 +380,9 @@ export const CATALOG: CatalogItem[] = [
     unit: '450ml bottle',
     aliases: ['dishwash', 'dish soap', 'morning fresh', 'liquid soap'],
     popular: false,
+    stockCount: 40,
+    marketEquivalents: 'Grease-cutting 450ml squeeze bottle',
+    tag: 'Antibacterial',
   },
   {
     id: 'dettol_250ml',
@@ -299,8 +392,32 @@ export const CATALOG: CatalogItem[] = [
     unit: '250ml bottle',
     aliases: ['dettol', 'antiseptic', 'disinfectant'],
     popular: false,
+    stockCount: 30,
+    marketEquivalents: 'Original brown antiseptic disinfectant',
+    tag: 'Family Health',
   },
 ];
+
+const SELLER_DIRECT_MAP: Record<string, { sellerName: string; sellerLocation: string }> = {
+  'Grains & Staples': { sellerName: 'Alhaja Kudirat Grain Merchants', sellerLocation: 'Moniya Central Market' },
+  'Noodles & Pasta': { sellerName: 'Mama Nkechi Wholesale Provisions', sellerLocation: 'Ojoo Interchange Market' },
+  'Cooking & Spices': { sellerName: 'Iya Moria Oils & Foodstuffs', sellerLocation: 'Bodija Market Hub' },
+  'Breakfast & Dairy': { sellerName: 'Bisi & Sons Grocery Depot', sellerLocation: 'Moniya Commercial Hub' },
+  'Drinks & Water': { sellerName: 'De-Golden Beverage Distributors', sellerLocation: 'Dugbe Wholesale District' },
+  'Household': { sellerName: 'Alhaji Sikiru Household Goods', sellerLocation: 'Ojoo Central Market' },
+};
+
+export const CATALOG: CatalogItem[] = RAW_CATALOG.map((item) => {
+  const seller = SELLER_DIRECT_MAP[item.category] || {
+    sellerName: 'Verified Ibadan Market Vendor',
+    sellerLocation: 'Moniya Central Hub',
+  };
+  return {
+    ...item,
+    sellerName: item.sellerName || seller.sellerName,
+    sellerLocation: item.sellerLocation || seller.sellerLocation,
+  };
+});
 
 export const formatNaira = (amount: number): string => {
   return `₦${amount.toLocaleString('en-NG')}`;

@@ -79,7 +79,7 @@ export default async function handler(req: any, res: any) {
 
     const instructions = `
 You are the AI supermarket parser for "QuickCart", an authentic Nigerian supermarket grocery bot.
-Your mission is to read customer input (which may be a handwritten grocery list photo, a paper receipt photo, a messy text list, or Nigerian Pidgin phrases like "abeg give me 2 mudu of rice, 3 indomie, 1 tin tomato and crate of egg").
+Your mission is to read customer input (which may be a handwritten grocery list photo, a paper receipt photo, a messy text list, or Nigerian Pidgin phrases like "abeg give me 2 congo of rice, 3 indomie, 1 tin tomato and crate of egg").
 
 CATALOG OF IN-STOCK SUPERMARKET ITEMS:
 ${catalogSummary}

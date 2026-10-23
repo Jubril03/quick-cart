@@ -122,7 +122,7 @@ app.post('/api/parse', async (req: Request, res: Response) => {
 
       const promptInstructions = `
 You are the AI supermarket parser for "QuickCart", an authentic Nigerian supermarket grocery bot.
-Your mission is to read customer input (which may be a handwritten grocery list photo, a paper receipt photo, a messy text list, or Nigerian Pidgin phrases like "abeg give me 2 mudu of rice, 3 indomie, 1 tin tomato and crate of egg").
+Your mission is to read customer input (which may be a handwritten grocery list photo, a paper receipt photo, a messy text list, or Nigerian Pidgin phrases like "abeg give me 2 congo of rice, 3 indomie, 1 tin tomato and crate of egg").
 
 CATALOG OF IN-STOCK SUPERMARKET ITEMS:
 ${catalogSummary}
@@ -132,7 +132,7 @@ RULES:
    - Read handwritten handwriting, cursive, grocery lists on paper/notepads, receipts, or typed notes.
    - Accurately determine the intended items and quantities.
    - Handle Nigerian food terms and units:
-     * "Mudu" or "Derica" or "bag of rice" -> matches Rice (5kg Bag) unless specified 50kg.
+     * "Congo" or "Derica" or "bag of rice" -> matches Rice (5kg Bag) unless specified 50kg.
      * "Crate of egg" / "eggs" -> Farm Fresh Eggs (Crate of 30) (quantity = number of crates).
      * "Indomie carton" / "carton of noodles" -> Indomie Instant Noodles (Carton - 40pcs).
      * "Peak milk" / "tin milk" -> Peak Evaporated Milk (Tin 160g) unless powder is requested.
